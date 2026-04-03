@@ -377,6 +377,10 @@ class Pioneer:
 
         logger.info("Main loop finished after %d iterations", iteration)
 
+        # stop simulation explicitly when finishing controller execution
+        sim.simxStopSimulation(client, sim.simx_opmode_oneshot)
+        time.sleep(0.5)
+
         # if CSV specified, save results
         if csv_filename:
             self.save_trajectory(csv_filename)
