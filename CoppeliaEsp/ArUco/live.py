@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-url = "http://192.168.1.75:4747/video" 
+url = "http://192.168.1.74:4747/video" 
 
 
 cap = cv2.VideoCapture(url)

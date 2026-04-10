@@ -1,12 +1,14 @@
 socket = require 'socket'
 
 local K = 13.54
-local PWM_MIN = 117
+local PWM_MIN = 130
 local PWM_MAX = 255
 local vel = 255
 
 function omegaToPWM(omega)
-    if omega == 0 then return 0 end  
+     if math.abs(omega) < 0.05 then 
+        return 0 
+    end    
     
     local sign = 1
     if omega < 0 then
@@ -16,6 +18,23 @@ function omegaToPWM(omega)
     
     local pwm = PWM_MIN + (K * omega / (K * 18.85)) * (PWM_MAX - PWM_MIN)
     pwm = math.max(0, math.min(PWM_MAX, pwm))
+    return sign * math.floor(pwm)
+end
+
+function omegaToPWMlaMario(omega)
+    if omega == 0 then 
+        return 0 
+    end  
+    
+    local sign = 1
+    if omega < 0 then
+        sign = -1
+        omega = math.abs(omega)
+    end
+    
+    
+    local pwm = omega * 8.76 + PWM_MIN
+
     return sign * math.floor(pwm)
 end
 
@@ -66,11 +85,16 @@ function sysCall_actuation()
     local currentTime = sim.getSystemTimeInMs(-1)
     if currentTime - lastUpdateTime < updateInterval then return end
 
-    local leftVel  = (sim.getJointTargetVelocity(leftFront)  + sim.getJointTargetVelocity(leftRear))  / 2
-    local rightVel = (sim.getJointTargetVelocity(rightFront) + sim.getJointTargetVelocity(rightRear)) / 2
+    --local leftVel  = (sim.getJointTargetVelocity(leftFront)  + sim.getJointTargetVelocity(leftRear))  / 2
+    --local rightVel = (sim.getJointTargetVelocity(rightFront) + sim.getJointTargetVelocity(rightRear)) / 2
 
-    local leftPWM  = omegaToPWM(leftVel)
-    local rightPWM = omegaToPWM(rightVel)
+    -- Usa sim.getJointVelocity en lugar de TargetVelocity
+    
+    local leftVel  = (sim.getJointVelocity(leftFront)  + sim.getJointVelocity(leftRear))  / 2
+    local rightVel = (sim.getJointVelocity(rightFront) + sim.getJointVelocity(rightRear)) / 2
+
+    local leftPWM  = omegaToPWMlaMario(leftVel)
+    local rightPWM = omegaToPWMlaMario(rightVel)
 
     
     

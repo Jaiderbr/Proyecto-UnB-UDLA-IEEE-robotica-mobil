@@ -354,14 +354,37 @@ class Pioneer:
 
             # compute wheel speeds
             vl, vr, run_flag = self.compute_wheel_speeds(linear_controller, omega, lock_stop_simulation, abs(error_phi))
+            
+            # vlAux,vrAux = 0.0, 0.0
+            vvel = 0.5
+            if iteration  < 15 :
+                vlAux = vvel
+                vrAux = vvel
+            elif iteration >= 15 and iteration < 30:
+                vlAux = -vvel
+                vrAux = -vvel
+                if iteration == 29:
+                    iteration = 0
+            
+                
+            print(f'vl ==> {vlAux} vr ==> {vrAux}')
+            print(f'iteration ==> {iteration}')
 
             # send speeds to motors
             if motorLF is not None and motorRF is not None and motorLR is not None and motorRR is not None:
 
-                sim.simxSetJointTargetVelocity(client, motorLF, vl, sim.simx_opmode_blocking)
-                sim.simxSetJointTargetVelocity(client, motorRF, vr, sim.simx_opmode_blocking)
-                sim.simxSetJointTargetVelocity(client, motorLR, vl, sim.simx_opmode_blocking)
-                sim.simxSetJointTargetVelocity(client, motorRR, vr, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorLF, vl, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorRF, vr, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorLR, vl, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorRR, vr, sim.simx_opmode_blocking)
+
+                sim.simxSetJointTargetVelocity(client, motorLF, vlAux, sim.simx_opmode_blocking)
+                sim.simxSetJointTargetVelocity(client, motorRF, vrAux, sim.simx_opmode_blocking)
+                sim.simxSetJointTargetVelocity(client, motorLR, vlAux, sim.simx_opmode_blocking)
+                sim.simxSetJointTargetVelocity(client, motorRR, vrAux, sim.simx_opmode_blocking)
+
+
+
 
             # save position trace
             self.x_out.append(float(robot_pos[0]))
