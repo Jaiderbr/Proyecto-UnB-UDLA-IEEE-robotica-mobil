@@ -1,29 +1,16 @@
 socket = require 'socket'
 
 local K = 13.54
-local PWM_MIN = 130
-local PWM_MAX = 255
+local PWM_MIN = 40  
+local PWM_MAX = 110
 local vel = 255
 
-function omegaToPWM(omega)
-     if math.abs(omega) < 0.05 then 
-        return 0 
-    end    
-    
-    local sign = 1
-    if omega < 0 then
-        sign = -1
-        omega = math.abs(omega)
-    end
-    
-    local pwm = PWM_MIN + (K * omega / (K * 18.85)) * (PWM_MAX - PWM_MIN)
-    pwm = math.max(0, math.min(PWM_MAX, pwm))
-    return sign * math.floor(pwm)
-end
+local DEADZONE = 0.05
 
 function omegaToPWMlaMario(omega)
-    if omega == 0 then 
-        return 0 
+    
+    if math.abs(omega) < DEADZONE then 
+        return 20 
     end  
     
     local sign = 1
@@ -32,8 +19,8 @@ function omegaToPWMlaMario(omega)
         omega = math.abs(omega)
     end
     
-    
-    local pwm = omega * 8.76 + PWM_MIN
+    local pwm = omega * 11      
+    pwm = math.min(math.max(pwm, PWM_MIN), PWM_MAX)
 
     return sign * math.floor(pwm)
 end
@@ -70,7 +57,6 @@ function sysCall_init()
     updateInterval = 50
     lastUpdateTime = sim.getSystemTimeInMs(-1)
 end
-
 function sysCall_actuation()
     if not connected or esp32_socket == nil then
         local currentTime = sim.getSystemTimeInMs(-1)
@@ -85,20 +71,16 @@ function sysCall_actuation()
     local currentTime = sim.getSystemTimeInMs(-1)
     if currentTime - lastUpdateTime < updateInterval then return end
 
-    --local leftVel  = (sim.getJointTargetVelocity(leftFront)  + sim.getJointTargetVelocity(leftRear))  / 2
-    --local rightVel = (sim.getJointTargetVelocity(rightFront) + sim.getJointTargetVelocity(rightRear)) / 2
-
-    -- Usa sim.getJointVelocity en lugar de TargetVelocity
     
-    local leftVel  = (sim.getJointVelocity(leftFront)  + sim.getJointVelocity(leftRear))  / 2
-    local rightVel = (sim.getJointVelocity(rightFront) + sim.getJointVelocity(rightRear)) / 2
-
-    local leftPWM  = omegaToPWMlaMario(leftVel)
-    local rightPWM = omegaToPWMlaMario(rightVel)
+    local leftVel  = (sim.getJointVelocity(leftFront)  + sim.getJointVelocity(leftRear))  
+    local rightVel = (sim.getJointVelocity(rightFront) + sim.getJointVelocity(rightRear))
 
     
+    local leftPWM  = omegaToPWMlaMario(leftVel/3)
+    local rightPWM = omegaToPWMlaMario(rightVel/3)
+
     
-    local msg = string.format("M:%d,%d,%.3f", leftPWM,rightPWM, sim.getSimulationTime())
+    local msg = string.format("M:%d,%d,%.3f", leftPWM, rightPWM, sim.getSimulationTime())
     
     local success, err = esp32_socket:send(msg .. "\n")
 
@@ -113,6 +95,7 @@ function sysCall_actuation()
 
     lastUpdateTime = currentTime
 end
+
 
 function sysCall_cleanup()
     if connected and esp32_socket then

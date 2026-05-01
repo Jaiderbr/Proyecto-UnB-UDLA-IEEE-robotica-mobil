@@ -43,6 +43,8 @@ DEFAULT_V_MAX = 10.0     # max linear speed in cm/s
 DEFAULT_V_MIN = -10.0    # min linear speed in cm/s
 DEFAULT_V_LINEAR = 15.0   # linear speed in cm/s
 
+SIM_SPEED_MULTIPLIER = 2.0
+
 class Pioneer:
     """
     @brief Controller class that implements PID-based heading control for a differential robot
@@ -317,13 +319,14 @@ class Pioneer:
             err_dist = math.hypot(ball_pos[1] - robot_pos[1], ball_pos[0] - robot_pos[0])
             phid = math.atan2(ball_pos[1] - robot_pos[1], ball_pos[0] - robot_pos[0])
 
-            # stopping criterion based on distance
+           
             if err_dist >= 0.2:
                 linear_controller = self.v_linear * err_dist
                 lock_stop_simulation = False
             else:
                 linear_controller = 0.0
                 lock_stop_simulation = True
+
 
             # adjust phid by +90deg as in original code
             phid = phid - 1.5708*2
@@ -355,33 +358,38 @@ class Pioneer:
             # compute wheel speeds
             vl, vr, run_flag = self.compute_wheel_speeds(linear_controller, omega, lock_stop_simulation, abs(error_phi))
             
-            # vlAux,vrAux = 0.0, 0.0
-            vvel = 0.5
-            if iteration  < 15 :
-                vlAux = vvel
-                vrAux = vvel
-            elif iteration >= 15 and iteration < 30:
-                vlAux = -vvel
-                vrAux = -vvel
-                if iteration == 29:
-                    iteration = 0
+            # # vlAux,vrAux = 0.0, 0.0
+            # vvel = 3.5
+            # if iteration  < 15 :
+            #     vlAux = vvel
+            #     vrAux = vvel
+            # elif iteration >= 15 and iteration < 25:
+            #     vlAux = -vvel
+            #     vrAux = -vvel
+            #     if iteration == 24:
+            #         iteration = 0
             
+
                 
-            print(f'vl ==> {vlAux} vr ==> {vrAux}')
-            print(f'iteration ==> {iteration}')
+            # print(f'vl ==> {vlAux} vr ==> {vrAux}')
+            # print(f'iteration ==> {iteration}')
 
             # send speeds to motors
             if motorLF is not None and motorRF is not None and motorLR is not None and motorRR is not None:
+                # Aplicar multiplicador de velocidad de simulación
+                # (El Lua lo compensará dividiendo por el mismo valor)
+                vl_sim = vl * SIM_SPEED_MULTIPLIER
+                vr_sim = vr * SIM_SPEED_MULTIPLIER
 
-                # sim.simxSetJointTargetVelocity(client, motorLF, vl, sim.simx_opmode_blocking)
-                # sim.simxSetJointTargetVelocity(client, motorRF, vr, sim.simx_opmode_blocking)
-                # sim.simxSetJointTargetVelocity(client, motorLR, vl, sim.simx_opmode_blocking)
-                # sim.simxSetJointTargetVelocity(client, motorRR, vr, sim.simx_opmode_blocking)
+                sim.simxSetJointTargetVelocity(client, motorLF, vl_sim, sim.simx_opmode_blocking)
+                sim.simxSetJointTargetVelocity(client, motorRF, vr_sim, sim.simx_opmode_blocking)
+                sim.simxSetJointTargetVelocity(client, motorLR, vl_sim, sim.simx_opmode_blocking)
+                sim.simxSetJointTargetVelocity(client, motorRR, vr_sim, sim.simx_opmode_blocking)
 
-                sim.simxSetJointTargetVelocity(client, motorLF, vlAux, sim.simx_opmode_blocking)
-                sim.simxSetJointTargetVelocity(client, motorRF, vrAux, sim.simx_opmode_blocking)
-                sim.simxSetJointTargetVelocity(client, motorLR, vlAux, sim.simx_opmode_blocking)
-                sim.simxSetJointTargetVelocity(client, motorRR, vrAux, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorLF, vlAux, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorRF, vrAux, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorLR, vlAux, sim.simx_opmode_blocking)
+                # sim.simxSetJointTargetVelocity(client, motorRR, vrAux, sim.simx_opmode_blocking)
 
 
 
