@@ -60,12 +60,40 @@ class Corobeu():
         self.y_out = []
         self.x_out = []
         self.phi = 0
-        self.v_max = 15
-        self.v_min = -15
-        self.v_linear = 5
+        self.v_max = 20
+        self.v_min = -20
+        self.v_linear = 10
         self.posError = []
         self.ideal_goleiro_x = -0.6
-        self.sel_position = 1
+        self.sel_position = 1    
+        self.last_raw_phi = 0.0
+        self.accumulated_offset = 0.0
+
+    def get_continuous(self, current_phi):
+            """
+            Calcula el ángulo continuo basado en el valor actual y el anterior.
+            Evita saltos de pi a -pi.
+            """
+            # 1. Calculamos la diferencia bruta entre el dato nuevo y el anterior
+            delta = current_phi - self.last_raw_phi
+
+            # 2. Si la diferencia es mayor a PI, significa que saltó de PI a -PI
+            #    entonces restamos 2*PI para compensar.
+            if delta > math.pi:
+                self.accumulated_offset -= 2 * math.pi
+            
+            # 3. Si la diferencia es menor a -PI, saltó de -PI a PI
+            #    entonces sumamos 2*PI para compensar.
+            elif delta < -math.pi:
+                self.accumulated_offset += 2 * math.pi
+
+            # 4. Actualizamos el último valor crudo para la siguiente iteración
+            self.last_raw_phi = current_phi
+
+            # 5. El ángulo continuo es el valor actual más todo lo acumulado
+            return current_phi + self.accumulated_offset
+
+
 
     def connect_CRB(self, port):
         """""
@@ -108,6 +136,28 @@ class Corobeu():
         returnCode, ball = sim.simxGetObjectHandle(clientID, 'ball', sim.simx_opmode_blocking)
                
         return clientID, robot, MotorE, MotorD, ball, clientID_start
+    
+    def quaternion_to_euler(self, q):
+        # Extraer los componentes del cuaternión
+        x, y, z, w = q
+
+        # Convertir a ángulos de Euler (en radianes)
+        # Roll (X), Pitch (Y), Yaw (Z)
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = math.atan2(t0, t1)
+
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = math.asin(t2)
+
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+
+        return [roll_x, pitch_y, yaw_z]  # Devolver en radianes
+
     
     def Speed_CRB(self, U, omega, lock_stop_simulation, signed, error_phi):
 
@@ -169,6 +219,9 @@ class Corobeu():
 
         return vl, vd, a
     
+   
+
+
     def PID_Controller_phi(self, kp, ki, kd, deltaT, error, interror, fant, Integral_part):
 
         """""
@@ -291,6 +344,10 @@ class Corobeu():
 
                     s, positiona = sim.simxGetObjectPosition(clientID, robot, -1, sim.simx_opmode_streaming)
                     s, ballPos = sim.simxGetObjectPosition(clientID, ball, -1, sim.simx_opmode_streaming)
+                    
+                    _, quaternion = sim.simxGetObjectQuaternion(clientID, robot, -1, sim.simx_opmode_blocking)
+            
+
                     s, angle_robot = sim.simxGetObjectOrientation(clientID, robot, -1, sim.simx_opmode_blocking)
                     # self.phi = angle_robot[2] - 1.47
                     self.phi = 0
@@ -304,8 +361,10 @@ class Corobeu():
                     # s, angle_ball = sim.simxGetObjectOrientation(clientID, robot, -1, sim.simx_opmode_blocking)
                     # self.phi = angle_robot[2] - 1.47
                     # Obtener la orientación del robot relativa al sistema de coordenadas global
-                    returnCode, orientation = sim.simxGetObjectOrientation(clientID, robot, -1,
-                                                                           sim.simx_opmode_blocking)
+                    _, quaternion = sim.simxGetObjectQuaternion(clientID, robot, -1, sim.simx_opmode_blocking)
+                    
+
+                    orientation = self.quaternion_to_euler(quaternion)
 
                     phi_robot = orientation[2]
                     self.phi = phi_robot
@@ -339,7 +398,7 @@ class Corobeu():
                         controller_Linear = 0
                         lock_stop_simulation = 1
                     ### Phi error to send the PID controller
-                    phid = phid + 1.5708  # sum 90
+                    phid = phid - 3.1416 # sum 90
 
                     # Calcula la diferencia entre el ángulo actual y el anterior
                     diferencia_phid = phid - angulo_anterior_phid
@@ -366,10 +425,7 @@ class Corobeu():
                     error_phi = phid - self.phi
                     # print(f'Position robot ==> {error_phi}')
                     acumulate_error = acumulate_error + abs(phid - self.phi)
-                    omega, fant_phi, interror_phi, Integral_part_phi = self.PID_Controller_phi(kpi, kii, kdi, deltaT,
-                                                                                               error_phi, interror_phi,
-                                                                                               fant_phi,
-                                                                                               Integral_part_phi)
+                    omega, fant_phi, interror_phi, Integral_part_phi = self.PID_Controller_phi(kpi, kii, kdi, deltaT, error_phi, interror_phi,fant_phi,Integral_part_phi)
 
                     ### Calculate the distance error, the robot stop when arrive the ball ###
 
@@ -394,8 +450,7 @@ class Corobeu():
 
                     # controller_Linear = 1 / (self.v_linear * error_distance) ## for VSSS more speed in the end
 
-                    vl, vd, a = self.Speed_CRB(controller_Linear, omega, lock_stop_simulation, signed,
-                                               abs(phid - self.phi))
+                    vl, vd, a = self.Speed_CRB(controller_Linear, omega, lock_stop_simulation, signed,abs(phid - self.phi))
 
                     ### Send the speed values to coppeliasim simulato ###
 
@@ -408,10 +463,11 @@ class Corobeu():
                 Time_Sample.append(Number_Iterations * deltaT)
                 y_position_out.append(positiona[1])
                 x_position_out.append(positiona[0])
-                if Number_Iterations == 50:
+                # print("iteration == > ", Number_Iterations)
+                if Number_Iterations == 100:
                     a = 0
                 # time.sleep(0.5)
-        ### Save the robot position ###ç
+        ### Save the robot position ###
         # Detener la simulación
         res = sim.simxStopSimulation(clientID_start, sim.simx_opmode_oneshot)
         time.sleep(2)
@@ -430,6 +486,6 @@ if __name__ == "__main__":
     kpi_MFO = [0.3902, 0.3504, 0.3201, 0.3278, 0.3413]
     kii_MFO = [0.3468, 0.2910, 0.0001, 0.0774, 0.1230]
     kdi_MFO = [0.0001, 0.0050, 0.0001, 0.0002, 0.0049]
-    x = [0.7973,0.2436,0.0234]
+    x = [0.3413, 0.1230 ,0.0049]
     deltaT = 0.05
     crb01.Robot_CRB(x, deltaT)
