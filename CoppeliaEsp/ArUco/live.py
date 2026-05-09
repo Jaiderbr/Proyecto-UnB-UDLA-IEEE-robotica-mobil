@@ -4,6 +4,8 @@ import math
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
+import time
+from aruco_communicator import ArucoDataPublisher
 
 class ArucoTracker:
     def __init__(self, url, marker_size_m=0.1):
@@ -44,6 +46,9 @@ class ArucoTracker:
         self.target_ppm = None  # Pixeles por metro del objetivo
         self.filtered_ppm = {}  # {car_id: filtered_ppm}
         self.calibration_factor = 0.750  # Factor de calibracion ajustable (default 0.750)
+        
+        # ArUco Data Publisher para comunicación con follow_ball.py
+        self.publisher = ArucoDataPublisher(data_dir=".")
 
         # Conectar a la camara o video
         self.source_type = self._detect_source_type(url)
@@ -492,6 +497,7 @@ class ArucoTracker:
 
             if ids is not None:
                 cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+                print(f"[ArUco] Detected {len(ids)} markers: {ids.flatten().tolist()}")
 
                 # Procesar cada marcador detectado
                 for corner, marker_id in zip(corners, ids.flatten()):
@@ -573,6 +579,25 @@ class ArucoTracker:
                     else:
                         cars_data[car_id]['distance_to_target'] = None
 
+            # PUBLICAR DATOS DE ARUCO A JSON PARA follow_ball.py
+            for car_id, car_data in cars_data.items():
+                if car_data['detected']:
+                    # Convertir píxeles a metros usando PPM del marcador
+                    ppm = float(car_data.get('ppm', 1000))
+                    x_m = float(car_data['x']) / ppm if ppm > 0 else 0.0
+                    y_m = float(car_data['y']) / ppm if ppm > 0 else 0.0
+                    
+                    success = self.publisher.publish(int(car_id), {
+                        'x': float(x_m),                                    # Metros (convertido)
+                        'y': float(y_m),                                    # Metros (convertido)
+                        'angle': float(car_data['angle']),                  # Grados
+                        'detected': bool(True),
+                        'distance_to_target': float(car_data.get('distance_to_target', 0.0)),
+                        'timestamp': time.time()
+                    })
+                    if success:
+                        print(f"[ArUco Publish] Car {car_id}: x={x_m:.3f}m, y={y_m:.3f}m, angle={car_data['angle']:.1f}°, dist={car_data.get('distance_to_target', 0.0):.3f}m")
+
             # Dibujar visualizacion
             frame = self.draw_visualization(frame, cars_data, target_data)
 
@@ -643,7 +668,8 @@ class ArucoTracker:
 
 if __name__ == "__main__":
     
-    url = "http://192.168.1.75:4747/video"    
+    url = "http://172.27.7.195:4747/video"    
+   
     # url = "C:\\Users\\jaide\\OneDrive\\Escritorio\\Proyecto UnB-UDLA-IEEE robotica mobil\\CoppeliaEsp\\ArUco\\tester3.mp4"
     # url = "0"  # Webcam por defecto
         

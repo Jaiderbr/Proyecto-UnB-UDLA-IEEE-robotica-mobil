@@ -33,6 +33,35 @@ import numpy as np
 import math as mat
 import time
 import csv
+import sys
+from pathlib import Path
+
+# Import ArUco communicator if available
+try:
+    # Add path to ArUco module
+    aruco_path = str(Path(__file__).parent.parent / "CoppeliaEsp" / "ArUco")
+    if aruco_path not in sys.path:
+        sys.path.insert(0, aruco_path)
+    
+    from aruco_communicator import ArucoDataSubscriber, create_default_aruco_data
+    ARUCO_AVAILABLE = True
+except ImportError:
+    print("[Warning] ArUco communicator not available. Running without ArUco integration.")
+    ARUCO_AVAILABLE = False
+    
+    # Create dummy functions
+    class ArucoDataSubscriber:
+        def __init__(self, *args, **kwargs):
+            pass
+        def subscribe(self, car_id):
+            return None
+    
+    def create_default_aruco_data(detected=False):
+        return {
+            'x': 0.0, 'y': 0.0, 'angle': 0.0, 
+            'detected': detected, 'distance_to_target': 0.0,
+            'timestamp': time.time(), 'stale': False
+        }
 
 class robot_four_wheels_UDLA():
     """"
@@ -66,6 +95,14 @@ class robot_four_wheels_UDLA():
         self.posError = []
         self.ideal_goleiro_x = -0.6
         self.sel_position = 1
+        self.fusion_alpha = 0.3  # Sensor fusion weight: 30% ArUco, 70% Simulation
+        
+        # Initialize ArUco subscriber for sensor fusion
+        if ARUCO_AVAILABLE:
+            aruco_dir = str(Path(__file__).parent.parent / "CoppeliaEsp" / "ArUco")
+            self.aruco_subscriber = ArucoDataSubscriber(data_dir=aruco_dir, timeout=2.0)
+        else:
+            self.aruco_subscriber = None
 
     def connect_robot(self, port):
         """""
@@ -233,18 +270,24 @@ class robot_four_wheels_UDLA():
         # print(f'Integral_part == {Integral_part}')
         return PID, f, interror, Integral_part
 
-    def Robot_four_wheels_UDLA(self, x, deltaT):
+    def Robot_four_wheels_UDLA(self, x, deltaT, aruco_data=None):
 
         """""
-        Principal function to simulate the follower ball robot
+        Principal function to simulate the follower ball robot with ArUco integration
             argument :
-                kpi              (Float) = Proportional constant used on the PID controller
-                kii              (Float) = Integral constant used on the PID controller
-                kdi              (Float) = Derivative constant used on the PID controller
+                x               (list)  = [kpi, kii, kdi] PID parameters
                 deltaT          (Float) = Sample time
+                aruco_data      (dict)  = ArUco detection data from live.py
+                                         {
+                                            'x': float (meters),
+                                            'y': float (meters),
+                                            'angle': float (degrees),
+                                            'detected': bool,
+                                            'distance_to_target': float
+                                         }
 
             outputs : 
-               none
+               fitness_function (float): Control fitness value
         """""
         kpi = x[0]
         kii = x[1]
@@ -314,18 +357,50 @@ class robot_four_wheels_UDLA():
 
                     phi_robot = orientation[2]
                     self.phi = phi_robot
+                    
+                    # INTEGRACIÓN DIRECTA DE DATOS DE ARUCO
+                    # Si recibimos datos de ArUco como parámetro, fusionar directamente
+                    if aruco_data is not None and aruco_data.get('detected', False):
+                        # Convertir ángulo de grados a radianes
+                        aruco_angle_rad = math.radians(aruco_data['angle'])
+                        
+                        # Fusión de sensores: 0.3*ArUco + 0.7*Simulación
+                        positiona_fused_x = self.fusion_alpha * aruco_data['x'] + \
+                                           (1 - self.fusion_alpha) * positiona[0]
+                        positiona_fused_y = self.fusion_alpha * aruco_data['y'] + \
+                                           (1 - self.fusion_alpha) * positiona[1]
+                        
+                        # Manejo de wraparound para ángulos (radianes)
+                        angle_diff = aruco_angle_rad - phi_robot
+                        while angle_diff > math.pi:
+                            angle_diff -= 2 * math.pi
+                        while angle_diff < -math.pi:
+                            angle_diff += 2 * math.pi
+                        
+                        phi_robot_fused = phi_robot + self.fusion_alpha * angle_diff
+                        self.phi = phi_robot_fused
+                        
+                        # Log de fusión
+                        print(f"[ArUco Fusion] ArUco: ({aruco_data['x']:.3f}, {aruco_data['y']:.3f}), "
+                              f"Sim: ({positiona[0]:.3f}, {positiona[1]:.3f}), "
+                              f"Fused: ({positiona_fused_x:.3f}, {positiona_fused_y:.3f})")
+                    else:
+                        # Si no hay datos de ArUco, usar solo simulación
+                        positiona_fused_x = positiona[0]
+                        positiona_fused_y = positiona[1]
+                        phi_robot_fused = phi_robot
 
                     if self.sel_position == 1:
-                        error_distance = math.sqrt((ballPos[1] - positiona[1]) ** 2 + (ballPos[0] - positiona[0]) ** 2)
+                        error_distance = math.sqrt((ballPos[1] - positiona_fused_y) ** 2 + (ballPos[0] - positiona_fused_x) ** 2)
                     elif self.sel_position == 0:
                         error_distance = math.sqrt(
-                            (ballPos[1] - positiona[1]) ** 2 + ((self.ideal_goleiro_x) - positiona[0]) ** 2)
+                            (ballPos[1] - positiona_fused_y) ** 2 + ((self.ideal_goleiro_x) - positiona_fused_x) ** 2)
 
                     # print(f'Angle robot ==> {angle_robot}')
 
                     if error_distance >= 0.15:
                         ### Calculate the phid (see georgia tech course) ###
-                        phid = math.atan2(ballPos[1] - positiona[1], ballPos[0] - positiona[0])
+                        phid = math.atan2(ballPos[1] - positiona_fused_y, ballPos[0] - positiona_fused_x)
                         controller_Linear = self.v_linear * error_distance
                         lock_stop_simulation = 0
 
@@ -432,4 +507,17 @@ if __name__ == "__main__":
     kd_MFO = 0.0234
     x = [kp_MFO, ki_MFO, kd_MFO]
     deltaT = 0.05
-    crb01.Robot_four_wheels_UDLA(x, deltaT)
+    
+    # Read ArUco data for sensor fusion (car_id = 3)
+    car_id = 3
+    aruco_data = None
+    if crb01.aruco_subscriber is not None:
+        aruco_data = crb01.aruco_subscriber.subscribe(car_id)
+        if aruco_data is None or aruco_data.get('stale', True):
+            # No ArUco data available or data is stale, use default
+            aruco_data = create_default_aruco_data(detected=False)
+            if ARUCO_AVAILABLE:
+                print("[Warning] ArUco data not available or stale, using simulation-only mode")
+    
+    # Call Robot_four_wheels_UDLA with ArUco data
+    crb01.Robot_four_wheels_UDLA(x, deltaT, aruco_data)
