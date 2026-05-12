@@ -210,7 +210,7 @@ if __name__ == "__main__":
     * Runs several independent training experiments
     * Records PID parameters, filtering values, and performance metrics
     * Tracks the best experiment across all runs
-    * Writes each experiment’s results to the CSV file
+    * Writes each experiment’s results to the CSV file1
     
     """
 
@@ -255,7 +255,8 @@ if __name__ == "__main__":
             if Min_global < best_min:
                 best_exp = i
                 best_min = Min_global
-
+            
+            print(f'Kp: {kp_BIO}, Ki: {ki_BIO}, Kd: {kd_BIO}, 1 - alfa: {unomenosalfa_BIO}, alfa: {alfa}, Min_global: {Min_global}')    
             csv_writer.writerow([kp_BIO, ki_BIO, kd_BIO, unomenosalfa_BIO, alfa, i, Min_global, best_exp, best_min])
 
 

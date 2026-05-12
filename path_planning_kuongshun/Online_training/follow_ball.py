@@ -60,9 +60,9 @@ class Corobeu():
         self.y_out = []
         self.x_out = []
         self.phi = 0
-        self.v_max = 20
-        self.v_min = -20
-        self.v_linear = 10
+        self.v_max = 15
+        self.v_min = -15
+        self.v_linear = 5
         self.posError = []
         self.ideal_goleiro_x = -0.6
         self.sel_position = 1    
@@ -486,6 +486,6 @@ if __name__ == "__main__":
     kpi_MFO = [0.3902, 0.3504, 0.3201, 0.3278, 0.3413]
     kii_MFO = [0.3468, 0.2910, 0.0001, 0.0774, 0.1230]
     kdi_MFO = [0.0001, 0.0050, 0.0001, 0.0002, 0.0049]
-    x = [0.3413, 0.1230 ,0.0049]
+    x = [0.3432, 0.0001 , 0.0001]
     deltaT = 0.05
     crb01.Robot_CRB(x, deltaT)

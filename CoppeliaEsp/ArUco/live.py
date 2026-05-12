@@ -668,7 +668,7 @@ class ArucoTracker:
 
 if __name__ == "__main__":
     
-    url = "http://172.27.7.195:4747/video"    
+    url = "http://192.168.1.74:4747/video"    
    
     # url = "C:\\Users\\jaide\\OneDrive\\Escritorio\\Proyecto UnB-UDLA-IEEE robotica mobil\\CoppeliaEsp\\ArUco\\tester3.mp4"
     # url = "0"  # Webcam por defecto

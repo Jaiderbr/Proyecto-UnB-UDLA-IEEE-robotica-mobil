@@ -53,7 +53,7 @@ function sysCall_init()
     leftFront  = sim.getObjectHandle('left_motor')
     rightFront = sim.getObjectHandle('rigth_motor')
 
-    esp32_ip   = "10.120.14.187"
+    esp32_ip   = "172.17.3.187"
     esp32_port = 80
     esp32_socket = nil
     connected    = false
