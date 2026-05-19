@@ -63,6 +63,10 @@ class kuongshun:
         v_linear: float = DEFAULT_V_LINEAR,
         ideal_goleiro_x: float = -0.6,
         sel_position: int = 1,
+        robot_name: str = "Car_A",
+        motor_left_name: str = "left_motor_A",
+        motor_right_name: str = "rigth_motor_A",
+        ball_name: str = "ball",
     ) -> None:
         """
         @brief Initialize controller internals.
@@ -72,6 +76,10 @@ class kuongshun:
         @param v_linear Linear velocity scaling factor for distance controller
         @param ideal_goleiro_x X location used when sel_position==0 (goalkeeper)
         @param sel_position 0 => "goleiro", 1 => "atacante" (affects target computation)
+        @param robot_name Name of the robot object in CoppeliaSim
+        @param motor_left_name Name of the left motor object in CoppeliaSim
+        @param motor_right_name Name of the right motor object in CoppeliaSim
+        @param ball_name Name of the ball object in CoppeliaSim
         """
         self.v_max = float(v_max)
         self.v_min = float(v_min)
@@ -80,6 +88,12 @@ class kuongshun:
         self.sel_position = int(sel_position)
         self.last_raw_phi = 0.0
         self.accumulated_offset = 0.0
+        
+        # object names
+        self.robot_name = robot_name
+        self.motor_left_name = motor_left_name
+        self.motor_right_name = motor_right_name
+        self.ball_name = ball_name
 
         # runtime data
         self.x_out: List[float] = []
@@ -138,11 +152,11 @@ class kuongshun:
 
         self.client_id = client_id
 
-        # obtain handles (blocking)
-        _, robot = sim.simxGetObjectHandle(client_id, "Turtlebot_Robot_Koungshun___2_Acrylic_Base_Plate_2_1", sim.simx_opmode_blocking)
-        _, motorL = sim.simxGetObjectHandle(client_id, "left_motor", sim.simx_opmode_blocking)
-        _, motorR = sim.simxGetObjectHandle(client_id, "rigth_motor", sim.simx_opmode_blocking)
-        _, ball = sim.simxGetObjectHandle(client_id, "ball", sim.simx_opmode_blocking)
+        # obtain handles (blocking) using the object names provided in __init__
+        _, robot = sim.simxGetObjectHandle(client_id, self.robot_name, sim.simx_opmode_blocking)
+        _, motorL = sim.simxGetObjectHandle(client_id, self.motor_left_name, sim.simx_opmode_blocking)
+        _, motorR = sim.simxGetObjectHandle(client_id, self.motor_right_name, sim.simx_opmode_blocking)
+        _, ball = sim.simxGetObjectHandle(client_id, self.ball_name, sim.simx_opmode_blocking)
 
         # store
         self.handle_robot = robot
