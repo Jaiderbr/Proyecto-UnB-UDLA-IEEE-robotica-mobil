@@ -104,24 +104,24 @@ def main():
             "csv_filename": "robot_1_trajectory.csv",
             "port": 19999,
         },
-        {
-            "robot_id": 2,
-            "robot_name": "Car_B",
-            "motor_left_name": "left_motor_B",
-            "motor_right_name": "rigth_motor_B",
-            "ball_name": "ball",
-            "csv_filename": "robot_2_trajectory.csv",
-            "port": 20000,
-        },
-        {
-            "robot_id": 3,
-            "robot_name": "Car_C",
-            "motor_left_name": "left_motor_C",
-            "motor_right_name": "rigth_motor_C",
-            "ball_name": "ball",
-            "csv_filename": "robot_3_trajectory.csv",
-            "port": 20001,
-        },
+        # {
+        #     "robot_id": 2,
+        #     "robot_name": "Car_B",
+        #     "motor_left_name": "left_motor_B",
+        #     "motor_right_name": "rigth_motor_B",
+        #     "ball_name": "ball",
+        #     "csv_filename": "robot_2_trajectory.csv",
+        #     "port": 20000,
+        # },
+        # {
+        #     "robot_id": 3,
+        #     "robot_name": "Car_C",
+        #     "motor_left_name": "left_motor_C",
+        #     "motor_right_name": "rigth_motor_C",
+        #     "ball_name": "ball",
+        #     "csv_filename": "robot_3_trajectory.csv",
+        #     "port": 20001,
+        # },
     ]
 
     # PID gains
