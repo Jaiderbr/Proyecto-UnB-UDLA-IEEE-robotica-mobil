@@ -1,8 +1,8 @@
 socket = require 'socket'
 
 local K = 13.54
-local PWM_MIN = 40  
-local PWM_MAX = 110
+local PWM_MIN = 60  
+local PWM_MAX = 255
 local vel = 255
 
 local DEADZONE = 0.05
@@ -19,7 +19,7 @@ function omegaToPWMlaMario(omega)
         omega = math.abs(omega)
     end
     
-    local pwm = omega * 11      
+    local pwm = omega * 15    
     pwm = math.min(math.max(pwm, PWM_MIN), PWM_MAX)
 
     return sign * math.floor(pwm)
@@ -42,12 +42,10 @@ end
 function sysCall_init()
     simRemoteApi.start(19999)
 
-    leftFront  = sim.getObjectHandle('Left_front_motor')
-    leftRear   = sim.getObjectHandle('Left_rear_motor')
-    rightFront = sim.getObjectHandle('Rigth_front_motor')
-    rightRear  = sim.getObjectHandle('Rigth_rear_motor')
+    leftFront  = sim.getObjectHandle('left_motor_A')
+    rightFront = sim.getObjectHandle('rigth_motor_A')
 
-    esp32_ip   = "192.168.1.88"
+    esp32_ip   = "#"
     esp32_port = 80
     esp32_socket = nil
     connected    = false
@@ -72,12 +70,8 @@ function sysCall_actuation()
     if currentTime - lastUpdateTime < updateInterval then return end
 
     
-    local leftVel  = (sim.getJointVelocity(leftFront)  + sim.getJointVelocity(leftRear))  
-    local rightVel = (sim.getJointVelocity(rightFront) + sim.getJointVelocity(rightRear))
-
-    
-    local leftPWM  = omegaToPWMlaMario(leftVel/3)
-    local rightPWM = omegaToPWMlaMario(rightVel/3)
+    local leftPWM  = omegaToPWMlaMario(sim.getJointVelocity(leftFront))
+    local rightPWM = omegaToPWMlaMario(sim.getJointVelocity(rightFront))
 
     
     local msg = string.format("M:%d,%d,%.3f", leftPWM, rightPWM, sim.getSimulationTime())

@@ -22,7 +22,7 @@ class ArucoTracker:
         self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
 
         # Configuracion de IDs
-        self.target_id = 2  # ID del marcador del objetivo
+        self.target_id = 3  # ID del marcador del objetivo
 
         # Variables de estado 
         self.cars = {}  # {car_id: {...datos...}}
@@ -45,7 +45,7 @@ class ArucoTracker:
         # Variables para calibracion de distancia
         self.target_ppm = None  # Pixeles por metro del objetivo
         self.filtered_ppm = {}  # {car_id: filtered_ppm}
-        self.calibration_factor = 0.750  # Factor de calibracion ajustable (default 0.750)
+        self.calibration_factor = 1.010  # Factor de calibracion ajustable (default 0.750)
         
         # ArUco Data Publisher para comunicación con follow_ball.py
         self.publisher = ArucoDataPublisher(data_dir=".")
@@ -668,7 +668,7 @@ class ArucoTracker:
 
 if __name__ == "__main__":
     
-    url = "http://192.168.1.74:4747/video"    
+    url = "http://192.168.1.75:4747/video"    
    
     # url = "C:\\Users\\jaide\\OneDrive\\Escritorio\\Proyecto UnB-UDLA-IEEE robotica mobil\\CoppeliaEsp\\ArUco\\tester3.mp4"
     # url = "0"  # Webcam por defecto
