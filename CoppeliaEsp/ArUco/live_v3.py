@@ -549,13 +549,13 @@ class ArucoTracker:
 
 
 if __name__ == "__main__":
-    url = r"C:\Users\jaide\Desktop\Proyecto-UnB-UDLA-IEEE-rob-tica-mobil\CoppeliaEsp\ArUco\tester4.mp4"
-
+    ##url = r"C:\Users\jaide\Desktop\Proyecto-UnB-UDLA-IEEE-rob-tica-mobil\CoppeliaEsp\ArUco\tester4.mp4"
+    url = "http://172.27.6.11:4747/video"
     marker_world_map = {
-        10: (0.0, 0.0),
-        11: (2.0, 0.0),
-        12: (2.0, 1.0),
-        13: (0.0, 1.0),
+        10: (0.0, 0.7),
+        11: (1.0, 0.7),
+        12: (1.0, -0.7),
+        13: (0.0, -0.7),
     }
 
     car_target_map = {
