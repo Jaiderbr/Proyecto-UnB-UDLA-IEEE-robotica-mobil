@@ -340,10 +340,17 @@ class kuongshun:
         
         while running and iteration < max_iterations:
             iteration += 1
-            # read states (blocking where appropriate to ensure valid data)
-            _, robot_pos = sim.simxGetObjectPosition(client, robot, -1, sim.simx_opmode_buffer)
-            _, ball_pos = sim.simxGetObjectPosition(client, ball, -1, sim.simx_opmode_buffer)
-            # _, orientation = sim.simxGetObjectOrientation(client, robot, -1, sim.simx_opmode_blocking)
+            # # read states (blocking where appropriate to ensure valid data)
+            # _, robot_pos = sim.simxGetObjectPosition(client, robot, -1, sim.simx_opmode_buffer)
+            # _, ball_pos = sim.simxGetObjectPosition(client, ball, -1, sim.simx_opmode_buffer)
+            # # _, orientation = sim.simxGetObjectOrientation(client, robot, -1, sim.simx_opmode_blocking)
+            # _, quaternion = sim.simxGetObjectQuaternion(client, robot, -1, sim.simx_opmode_blocking)
+            # orientation = self.quaternion_to_euler(quaternion)
+
+
+            
+            _, robot_pos = sim.simxGetObjectPosition(client, robot, -1, sim.simx_opmode_blocking)
+            _, ball_pos = sim.simxGetObjectPosition(client, ball, -1, sim.simx_opmode_blocking)
             _, quaternion = sim.simxGetObjectQuaternion(client, robot, -1, sim.simx_opmode_blocking)
             orientation = self.quaternion_to_euler(quaternion)
 
@@ -351,6 +358,8 @@ class kuongshun:
                 logger.debug("Waiting for valid streaming data (iter=%d)", iteration)
                 time.sleep(delta_t)
                 continue
+
+            print("robot_pos: ", robot_pos)
 
             phi_robot = float(orientation[2])
             # compute planar distance to target
@@ -381,9 +390,9 @@ class kuongshun:
             error_phi = phid - phi_robot
             error_phi = math.atan2(math.sin(error_phi), math.cos(error_phi))  # wrap to [-pi, pi]
 
-            print("phi_robot: ", phi_robot)
-            print("phid: ", phid)
-            print("error_phi: ", error_phi)
+            # print("phi_robot: ", phi_robot)
+            # print("phid: ", phid)
+            # print("error_phi: ", error_phi)
 
             logger.debug("iter=%d phid=%.4f phi=%.4f err_phi=%.4f err_dist=%.4f", iteration, phid, phi_robot, error_phi, err_dist)
 
@@ -395,7 +404,6 @@ class kuongshun:
             omega, prev_filtered_phi, integral_error_phi, integral_part_phi = self.pid_phi(
                 kpi, kii, kdi, delta_t, error_phi, integral_error_phi, prev_filtered_phi, integral_part_phi
             )
-
 
             # compute wheel speeds
             vl, vr, run_flag = self.compute_wheel_speeds(linear_controller, omega, lock_stop_simulation, abs(error_phi))
@@ -471,13 +479,17 @@ class kuongshun:
         if len(xs) != len(ys):
             logger.error("Inconsistent trajectory lengths: xs=%d ys=%d", len(xs), len(ys))
             return
-
-        plt.figure(figsize=(6, 5))
-        plt.plot(xs, ys, marker="o", linestyle="-")
-        plt.xlabel("x_out")
-        plt.ylabel("y_out")
-        plt.title("Robot trajectory (first sample omitted)" if skip_first else "Robot trajectory")
-        plt.grid(True)
+        fig, ax = plt.subplots(figsize=(6, 5))
+        ax.plot(xs, ys, marker="o", linestyle="-", markersize=3)
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_box_aspect(1)
+        ax.set_xlabel("x_out")
+        ax.set_ylabel("y_out")
+        ax.set_title(
+            f"Robot trajectory - {self.robot_name} (first sample omitted)" if skip_first else f"Robot trajectory - {self.robot_name}"
+        )
+        ax.grid(True)
+        plt.tight_layout()
         plt.show()
 
 

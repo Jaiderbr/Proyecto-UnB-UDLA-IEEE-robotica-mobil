@@ -1,3 +1,4 @@
+import csv
 import cv2
 import numpy as np
 import math
@@ -321,8 +322,9 @@ class ArucoTracker:
         for idx, (car_id, history) in enumerate(sorted(self.position_history.items())):
             xs = history['x']
             ys = history['y']
+            times = history['time']
 
-            if not xs or not ys:
+            if not xs or not ys or not times:
                 continue
 
             plt.figure(figsize=(6, 5))
@@ -337,6 +339,14 @@ class ArucoTracker:
             plt.savefig(filename, dpi=150, bbox_inches='tight')
             plt.close()
             print(f"Grafica guardada: {filename}")
+
+            csv_filename = os.path.join(output_dir, f'carro_{car_id}.csv')
+            with open(csv_filename, mode="w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["time", "x", "y"])
+                for elapsed_time, x_value, y_value in zip(times, xs, ys):
+                    writer.writerow([elapsed_time, x_value, y_value])
+            print(f"CSV guardado: {csv_filename}")
 
         print(f"Todas las graficas fueron guardadas en: {output_dir}")
 
