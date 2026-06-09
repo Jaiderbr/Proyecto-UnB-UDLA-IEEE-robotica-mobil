@@ -550,7 +550,7 @@ class ArucoTracker:
 
 if __name__ == "__main__":
     ##url = r"C:\Users\jaide\Desktop\Proyecto-UnB-UDLA-IEEE-rob-tica-mobil\CoppeliaEsp\ArUco\tester4.mp4"
-    url = "http://172.27.6.11:4747/video"
+    url = "http://172.27.27.198:4747/video"
     marker_world_map = {
         10: (0.0, 0.7),
         11: (1.0, 0.7),

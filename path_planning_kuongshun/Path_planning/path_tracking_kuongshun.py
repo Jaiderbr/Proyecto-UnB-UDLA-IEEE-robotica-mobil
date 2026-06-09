@@ -373,7 +373,7 @@ class kuongshun:
           
 
             # stopping criterion based on distance
-            if err_dist >= 0.2:
+            if err_dist >= 0.26:
                 linear_controller = self.v_linear * err_dist
                 lock_stop_simulation = False
             else:

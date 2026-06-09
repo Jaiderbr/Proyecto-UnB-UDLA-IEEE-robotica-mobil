@@ -28,9 +28,9 @@ def run_single_robot(robot_id, robot_name, motor_left_name, motor_right_name, ba
     try:
         log.info(f"Iniciando robot {robot_id} en puerto {port}")
         controller = kuongshun(
-            v_max=15.0,
-            v_min=-15.0,
-            v_linear=10.0,
+            v_max=25.0,
+            v_min=-25.0,
+            v_linear=29.0,
             ideal_goleiro_x=-0.6,
             sel_position=1,
             robot_name=robot_name,
@@ -69,24 +69,24 @@ def main():
             "csv_filename": "robot_1_trajectory.csv",
             "port": 19999,
         },
-        # {
-        #     "robot_id": 2,
-        #     "robot_name": "Car_B",
-        #     "motor_left_name": "left_motor_B",
-        #     "motor_right_name": "rigth_motor_B",
-        #     "ball_name": "ball_B",
-        #     "csv_filename": "robot_2_trajectory.csv",
-        #     "port": 20000,
-        # },
-        # {
-        #     "robot_id": 3,
-        #     "robot_name": "Car_C",
-        #     "motor_left_name": "left_motor_C",
-        #     "motor_right_name": "rigth_motor_C",
-        #     "ball_name": "ball_C", 
-        #     "csv_filename": "robot_3_trajectory.csv",
-        #     "port": 20001,
-        # },
+        {
+            "robot_id": 2,
+            "robot_name": "Car_B",
+            "motor_left_name": "left_motor_B",
+            "motor_right_name": "rigth_motor_B",
+            "ball_name": "ball_B",
+            "csv_filename": "robot_2_trajectory.csv",
+            "port": 20000,
+        },
+        {
+            "robot_id": 3,
+            "robot_name": "Car_C",
+            "motor_left_name": "left_motor_C",
+            "motor_right_name": "rigth_motor_C",
+            "ball_name": "ball_C", 
+            "csv_filename": "robot_3_trajectory.csv",
+            "port": 20001,
+        },
     ]
 
     pid_gains = (0.3432, 0.0001, 0.0001)

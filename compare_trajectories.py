@@ -170,8 +170,8 @@ def load_csv_auto(path: Path) -> Tuple[List[float], List[float], List[float]]:
     
     return times, xs, ys
 
-REAL_ROOT = Path(r"C:\Users\jaide\Desktop\Proyecto-UnB-UDLA-IEEE-rob-tica-mobil\20260604_163831")
-COPPELIA_ROOT = Path(r"C:\Users\jaide\Desktop\Proyecto-UnB-UDLA-IEEE-rob-tica-mobil\CoppeliaEsp\Cars_Trajectory_V3\20260604_163831")
+REAL_ROOT = Path(r"D:\Proyecto-UnB-UDLA-IEEE-robotica-mobil\20260609_144552")
+COPPELIA_ROOT = Path(r"D:\Proyecto-UnB-UDLA-IEEE-robotica-mobil\CoppeliaEsp\Cars_Trajectory_V3\20260609_144552")
 
 def main() -> None:
     real_root = REAL_ROOT
