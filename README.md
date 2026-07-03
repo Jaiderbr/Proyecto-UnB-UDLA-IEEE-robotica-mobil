@@ -167,7 +167,7 @@ Reads CSV files from real and simulated runs and generates normalized comparativ
 
 ## Authors
 
-- **Jaider Buitista Rodriguez** — Universidad de la Amazonia
+- **Jaider Bautista Rodriguez** — Universidad de la Amazonia
 - **Mario Andrés Pastrana Triana** — Universidade de Brasília
 - **Jesus Pinto Lopera** — Professor, Universidad de la Amazonia
 - **Daniel Mauricio Muñoz Arboleda** — Professor, Universidade de Brasília
